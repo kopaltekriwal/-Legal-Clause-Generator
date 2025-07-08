@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Clause Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .clause-section {
+            margin-bottom: 25px;
+        }
+
+        .clause-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .clause-type {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .clause-type:hover {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+
+        .clause-type.active {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .output-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .output-header h3 {
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .export-word {
+            background: #0078d4;
+            color: white;
+        }
+
+        .export-pdf {
+            background: #dc3545;
+            color: white;
+        }
+
+        .export-copy {
+            background: #6c757d;
+            color: white;
+        }
+
+        .export-btn:hover {
+            opacity: 0.8;
+        }
+
+        .generated-clause {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            line-height: 1.8;
+            font-size: 14px;
+            min-height: 400px;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading.hide {
+            display: none;
+        }
+
+        .disclaimer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        .template-preview {
+            background: #e8f4f8;
+            border: 1px solid #b8e6f0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0c5460;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .export-buttons {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Legal Clause Generator</h1>
+            <p>Generate professional legal clauses with AI assistance</p>
+        </div>
+
+        <div class="disclaimer">
+            <strong>⚠️ Legal Disclaimer:</strong> This tool generates sample legal clauses for informational purposes only. All generated content should be reviewed by qualified legal professionals before use. This tool does not constitute legal advice.
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="clause-section">
+                    <h3>Contract Clauses</h3>
+                    <button class="clause-type" onclick="selectClause(event, 'confidentiality')">Confidentiality/NDA</button>
+                    <button class="clause-type" onclick="selectClause(event, 'indemnity')">Indemnity</button>
+                    <button class="clause-type" onclick="selectClause(event, 'limitation')">Limitation of Liability</button>
+                    <button class="clause-type" onclick="selectClause(event, 'termination')">Termination</button>
+                    <button class="clause-type" onclick="selectClause(event, 'force_majeure')">Force Majeure</button>
+                    
+                </div>
+
+                <div class="clause-section">
+                    <h3>Dispute Resolution</h3>
+                    <button class="clause-type" onclick="selectClause('arbitration')">Arbitration</button>
+                    <button class="clause-type" onclick="selectClause('mediation')">Mediation</button>
+                    <button class="clause-type" onclick="selectClause('jurisdiction')">Jurisdiction</button>
+                </div>
+
+                <div class="clause-section">
+                    <h3>Privacy & Data</h3>
+                    <button class="clause-type" onclick="selectClause('data_protection')">Data Protection</button>
+                    <button class="clause-type" onclick="selectClause('privacy_policy')">Privacy Policy</button>
+                    <button class="clause-type" onclick="selectClause('cookies')">Cookie Policy</button>
+                </div>
+
+                <div class="clause-section">
+                    <h3>IP & Licensing</h3>
+                    <button class="clause-type" onclick="selectClause('ip_ownership')">IP Ownership</button>
+                    <button class="clause-type" onclick="selectClause('licensing')">Licensing</button>
+                    <button class="clause-type" onclick="selectClause('work_for_hire')">Work for Hire</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="partyA">Party A (First Party):</label>
+                    <input type="text" id="partyA" placeholder="Company Name or Individual">
+                </div>
+
+                <div class="form-group">
+                    <label for="partyB">Party B (Second Party):</label>
+                    <input type="text" id="partyB" placeholder="Company Name or Individual">
+                </div>
+
+                <div class="form-group">
+                    <label for="jurisdiction">Jurisdiction:</label>
+                    <select id="jurisdiction">
+                        <option value="New York">New York</option>
+                        <option value="California">California</option>
+                        <option value="Delaware">Delaware</option>
+                        <option value="Texas">Texas</option>
+                        <option value="Florida">Florida</option>
+                        <option value="England and Wales">England and Wales</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="customRequirements">Custom Requirements:</label>
+                    <textarea id="customRequirements" rows="4" placeholder="Enter any specific requirements or modifications..."></textarea>
+                </div>
+
+                <button class="generate-btn" onclick="generateClause()" id="generateBtn">
+                    Generate Clause
+                </button>
+            </div>
+
+            <div class="output-section">
+                <div class="output-header">
+                    <h3>Generated Legal Clause</h3>
+                    <div class="export-buttons">
+                        <button class="export-btn export-copy" onclick="copyToClipboard()">📋 Copy</button>
+                        <button class="export-btn export-word" onclick="exportToWord()">📄 Word</button>
+                        <button class="export-btn export-pdf" onclick="exportToPDF()">📕 PDF</button>
+                    </div>
+                </div>
+
+                <div class="generated-clause" id="generatedClause">
+                    <div class="loading hide" id="loading">
+                        <p>🔄 Generating your legal clause...</p>
+                    </div>
+                    <div id="clauseOutput">
+                        Select a clause type and click "Generate Clause" to begin.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_KEY = 'AIzaSyCvMGnvscyIFB3nYFrtHsuKS1l7IUi8mIM'; // Replace with your actual API key
+        const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+
+        let currentClauseType = '';
+        let generatedContent = '';
+
+        // Clause templates and prompts
+        const clauseTemplates = {
+            confidentiality: {
+                name: 'Confidentiality/NDA Clause',
+                prompt: `Generate a comprehensive confidentiality clause for a legal agreement. Include provisions for:
+                - Definition of confidential information
+                - Obligations of the receiving party
+                - Exceptions to confidentiality
+                - Duration of confidentiality obligations
+                - Remedies for breach
+                
+                Format as a professional legal clause with proper numbering and subsections.`,
+                preview: 'This clause establishes confidentiality obligations between parties regarding sensitive information.'
+            },
+            indemnity: {
+                name: 'Indemnity Clause',
+                prompt: `Generate a mutual indemnity clause that includes:
+                - Indemnification obligations
+                - Scope of indemnification
+                - Procedures for indemnification claims
+                - Limitations and exclusions
+                - Defense obligations
+                
+                Make it balanced and enforceable.`,
+                preview: 'This clause outlines indemnification obligations and protections for both parties.'
+            },
+            limitation: {
+                name: 'Limitation of Liability Clause',
+                prompt: `Create a limitation of liability clause that:
+                - Limits damages to direct damages only
+                - Excludes consequential and punitive damages
+                - Sets monetary caps where appropriate
+                - Includes standard exceptions
+                - Complies with general enforceability standards
+                
+                Format professionally with clear subsections.`,
+                preview: 'This clause limits liability exposure and excludes certain types of damages.'
+            },
+            termination: {
+                name: 'Termination Clause',
+                prompt: `Generate a comprehensive termination clause covering:
+                - Termination for convenience
+                - Termination for cause
+                - Notice requirements
+                - Post-termination obligations
+                - Survival of certain provisions
+                
+                Include specific timeframes and procedures.`,
+                preview: 'This clause defines how and when the agreement can be terminated.'
+            },
+            force_majeure: {
+                name: 'Force Majeure Clause',
+                prompt: `Create a force majeure clause that includes:
+                - Definition of force majeure events
+                - Notice requirements
+                - Mitigation obligations
+                - Suspension vs. termination rights
+                - Pandemic and government action provisions
+                
+                Make it comprehensive and current.`,
+                preview: 'This clause addresses unforeseeable circumstances that prevent performance.'
+            },
+            arbitration: {
+                name: 'Arbitration Clause',
+                prompt: `Generate an arbitration clause with:
+                - Binding arbitration requirement
+                - Arbitration rules and procedures
+                - Arbitrator selection process
+                - Venue and governing law
+                - Exceptions for equitable relief
+                
+                Ensure enforceability and clarity.`,
+                preview: 'This clause requires disputes to be resolved through arbitration.'
+            },
+            mediation: {
+                name: 'Mediation Clause',
+                prompt: `Create a mediation clause that includes:
+                - Mandatory mediation before litigation
+                - Mediation procedures and rules
+                - Mediator selection process
+                - Good faith participation requirements
+                - Confidentiality of mediation
+                
+                Structure as a prerequisite to other dispute resolution.`,
+                preview: 'This clause requires mediation as a first step in dispute resolution.'
+            },
+            jurisdiction: {
+                name: 'Jurisdiction Clause',
+                prompt: `Generate a jurisdiction and governing law clause with:
+                - Exclusive jurisdiction designation
+                - Governing law specification
+                - Venue requirements
+                - Service of process provisions
+                - Waiver of jury trial (if applicable)
+                
+                Make it comprehensive and enforceable.`,
+                preview: 'This clause establishes which courts have jurisdiction and which laws apply.'
+            },
+            data_protection: {
+                name: 'Data Protection Clause',
+                prompt: `Create a data protection clause covering:
+                - Data processing obligations
+                - Security measures requirements
+                - GDPR/CCPA compliance provisions
+                - Data breach notification procedures
+                - Data subject rights
+                
+                Ensure compliance with major privacy regulations.`,
+                preview: 'This clause addresses data protection and privacy compliance obligations.'
+            },
+            privacy_policy: {
+                name: 'Privacy Policy Clause',
+                prompt: `Generate privacy policy provisions covering:
+                - Data collection and use
+                - Cookie usage
+                - Third-party sharing
+                - User rights and choices
+                - Contact information for privacy concerns
+                
+                Make it user-friendly yet comprehensive.`,
+                preview: 'This clause explains how personal data is collected, used, and protected.'
+            },
+            cookies: {
+                name: 'Cookie Policy Clause',
+                prompt: `Create a cookie policy clause that includes:
+                - Types of cookies used
+                - Purpose of cookie usage
+                - Cookie consent mechanisms
+                - Cookie management instructions
+                - Third-party cookie disclosure
+                
+                Ensure GDPR compliance and user clarity.`,
+                preview: 'This clause explains cookie usage and provides user control options.'
+            },
+            ip_ownership: {
+                name: 'IP Ownership Clause',
+                prompt: `Generate an intellectual property ownership clause with:
+                - Ownership of pre-existing IP
+                - Ownership of developed IP
+                - Assignment provisions
+                - Moral rights considerations
+                - IP registration responsibilities
+                
+                Provide clear ownership allocation.`,
+                preview: 'This clause defines intellectual property ownership and assignment rights.'
+            },
+            licensing: {
+                name: 'Licensing Clause',
+                prompt: `Create a licensing clause that covers:
+                - Scope of license granted
+                - Permitted and prohibited uses
+                - License restrictions
+                - Royalty and payment terms
+                - Termination of license rights
+                
+                Balance licensor and licensee interests.`,
+                preview: 'This clause grants specific rights to use intellectual property.'
+            },
+            work_for_hire: {
+                name: 'Work for Hire Clause',
+                prompt: `Generate a work for hire clause including:
+                - Work for hire designation
+                - Ownership of work product
+                - Assignment as backup
+                - Moral rights waiver
+                - Cooperation in IP protection
+                
+                Ensure comprehensive IP transfer.`,
+                preview: 'This clause establishes that work created is owned by the hiring party.'
+            }
+        };
+
+        function selectClause(event, type) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.clause-type').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        
+            // Add active class to selected button
+            event.target.classList.add('active');
+        
+            currentClauseType = type;
+        
+            // Show preview
+            const template = clauseTemplates[type];
+            document.getElementById('clauseOutput').innerHTML = `
+                <div class="template-preview">
+                    <h4>${template.name}</h4>
+                    <p>${template.preview}</p>
+                </div>
+                <p>Click "Generate Clause" to create a customized version of this clause.</p>
+            `;
+        }
+        
+
+        function showLoading(show = true) {
+            const loading = document.getElementById('loading');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            if (show) {
+                loading.classList.remove('hide');
+                loading.classList.add('show');
+                generateBtn.disabled = true;
+                generateBtn.textContent = 'Generating...';
+            } else {
+                loading.classList.remove('show');
+                loading.classList.add('hide');
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Clause';
+            }
+        }
+
+        async function generateClause() {
+            if (!currentClauseType) {
+                alert('Please select a clause type first.');
+                return;
+            }
+
+            const partyA = document.getElementById('partyA').value || '[Party A]';
+            const partyB = document.getElementById('partyB').value || '[Party B]';
+            const jurisdiction = document.getElementById('jurisdiction').value;
+            const customRequirements = document.getElementById('customRequirements').value;
+
+            showLoading(true);
+
+            try {
+                const template = clauseTemplates[currentClauseType];
+                const fullPrompt = `${template.prompt}
+                
+                Customization details:
+                - Party A: ${partyA}
+                - Party B: ${partyB}
+                - Jurisdiction: ${jurisdiction}
+                - Custom Requirements: ${customRequirements || 'None specified'}
+                
+                Generate a professional legal clause that incorporates these details. Use proper legal formatting with numbered sections and subsections. The clause should be comprehensive, enforceable, and professionally drafted.`;
+
+                const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: fullPrompt
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+
+                const data = await response.json();
+                generatedContent = data.candidates[0].content.parts[0].text;
+                
+                document.getElementById('clauseOutput').innerHTML = `
+                    <h4>${template.name}</h4>
+                    <hr style="margin: 15px 0;">
+                    ${generatedContent.replace(/\n/g, '<br>')}
+                `;
+
+            } catch (error) {
+                console.error('Error generating clause:', error);
+                document.getElementById('clauseOutput').innerHTML = `
+                    <div style="color: #dc3545; padding: 20px; text-align: center;">
+                        <h4>Error Generating Clause</h4>
+                        <p>Sorry, there was an error generating your clause. Please try again later.</p>
+                    </div>
+                `;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function copyToClipboard() {
+            if (!generatedContent) {
+                alert('Please generate a clause first.');
+                return;
+            }
+
+            const textArea = document.createElement('textarea');
+            textArea.value = generatedContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            alert('Clause copied to clipboard!');
+        }
+
+        function exportToWord() {
+            if (!generatedContent) {
+                alert('Please generate a clause first.');
+                return;
+            }
+        
+            const template = clauseTemplates[currentClauseType];
+            const partyA = document.getElementById('partyA').value || '[Party A]';
+            const partyB = document.getElementById('partyB').value || '[Party B]';
+            const jurisdiction = document.getElementById('jurisdiction').value;
+            const date = new Date().toLocaleDateString();
+        
+            const docContent = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${template.name}</title>
+                    <style>
+                        body { font-family: 'Times New Roman', serif; margin: 1in; line-height: 1.6; }
+                        h1 { text-align: center; margin-bottom: 30px; }
+                        .header-info { margin-bottom: 30px; }
+                        .clause-content { margin-top: 20px; }
+                        .footer { margin-top: 30px; font-size: 12px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${template.name}</h1>
+                    <div class="header-info">
+                        <p><strong>Generated on:</strong> ${date}</p>
+                        <p><strong>Party A:</strong> ${partyA}</p>
+                        <p><strong>Party B:</strong> ${partyB}</p>
+                        <p><strong>Jurisdiction:</strong> ${jurisdiction}</p>
+                    </div>
+                    <div class="clause-content">
+                        ${generatedContent.replace(/\n/g, '<br>')}
+                    </div>
+                    <div class="footer">
+                        <p><em>This document was generated by Legal Clause Generator. Please have it reviewed by qualified legal counsel before use.</em></p>
+                    </div>
+                </body>
+                </html>
+            `;
+        
+            const blob = new Blob([docContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${template.name.replace(/\s+/g, '_')}_${date.replace(/\//g, '-')}.doc`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToPDF() {
+            if (!generatedContent) {
+                alert('Please generate a clause first.');
+                return;
+            }
+        
+            const template = clauseTemplates[currentClauseType];
+            const partyA = document.getElementById('partyA').value || '[Party A]';
+            const partyB = document.getElementById('partyB').value || '[Party B]';
+            const jurisdiction = document.getElementById('jurisdiction').value;
+            const date = new Date().toLocaleDateString();
+        
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+        
+            // Title
+            doc.setFontSize(18);
+            doc.text(template.name, 20, 30);
+        
+            // Header
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${date}`, 20, 50);
+            doc.text(`Party A: ${partyA}`, 20, 60);
+            doc.text(`Party B: ${partyB}`, 20, 70);
+            doc.text(`Jurisdiction: ${jurisdiction}`, 20, 80);
+        
+            // Clause content
+            doc.setFontSize(11);
+            const splitText = doc.splitTextToSize(generatedContent, 170);
+            doc.text(splitText, 20, 100);
+        
+            // Footer
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFontSize(9);
+            doc.text('This document was generated by Legal Clause Generator. Please have it reviewed by qualified legal counsel before use.', 20, pageHeight - 20);
+        
+            doc.save(`${template.name.replace(/\s+/g, '_')}_${date.replace(/\//g, '-')}.pdf`);
+        }
+        
+        // Automatically select the first clause on load
+        window.onload = function () {
+            document.querySelector('.clause-type').click();
+        };
+
+        // Initialize the app
+        window.onload = function() {
+            // Select the first clause type by default
+            document.querySelector('.clause-type').click();
+        };
+    </script>
+</body>
+</html>
